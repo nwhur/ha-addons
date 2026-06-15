@@ -94,9 +94,10 @@ Python 구현 시 다음 알고리즘을 준수해야 합니다.
 | **Sensor** | `sensor.humicon_pm25` | 휴미컨 초미세먼지 | 기본값 | `device_class: pm25`, `unit_of_measurement: µg/m³` |
 | **Switch** | `switch.humicon_rc_lock` | 휴미컨 RC 잠금 | 기본값 | `payload_on`: "ON", `payload_off`: "OFF" |
 
-### 4.2. High Availability (가용성 관리)
-- 모든 엔티티는 `availability_topic` (`humicon/status`)을 가져야 합니다.
-- 데몬이 EW11과 연결되면 `online`을 발행하고, 연결이 끊기면 즉각 `offline`을 발행해야 합니다.
+### 4.2. High Availability 및 상태 토픽 매핑
+- **Command Topic:** `humicon/cmd/[기능명]` (예: power, mode, fan, target_humidity, rc_lock 등)
+- **State Topic:** `humicon/state/[기능명]`
+- 모든 엔티티의 **Availability Topic:** `humicon/state/availability` (연결 시 `online`, 끊김 시 `offline` 발행)
 - 이를 통해 네트워크 단절 시 HA 대시보드에서 기기가 "사용 불가" 처리되어 오작동을 방지해야 합니다.
 
 ---
@@ -104,17 +105,15 @@ Python 구현 시 다음 알고리즘을 준수해야 합니다.
 ## 5. Add-on 패키징 및 설정 (Configuration)
 HA Supervisor 호환 애드온으로 구동하기 위한 명세입니다.
 
-### 5.1. `config.yaml` 요구사항
-사용자는 다음 정보를 UI에서 입력할 수 있어야 합니다.
-* `ew11_host` (필수): EW11의 IP 주소 (문자열)
-* `ew11_port` (필수): EW11 포트 (정수, 기본 8899)
-* `mqtt_host`, `mqtt_port`, `mqtt_user`, `mqtt_password` (필수)
-* **`language` (필수):** `ko` (한국어) 또는 `en` (영어) 선택 기능 (i18n 지원용)
+### 5.1. `config.yaml` 및 환경 설정 주입 로직
+- 사용자는 UI에서 설정값을 입력하며, 데몬 코드(`humicon_daemon.py`)는 HA Supervisor가 제공하는 **`/data/options.json`** 파일을 직접 파싱하여 설정값을 불러와야 합니다.
+- **필수 속성:** `ew11_host`, `ew11_port`, `mqtt_host`, `mqtt_port`, `mqtt_user`, `mqtt_password`, `language` (ko/en)
 
 ### 5.2. 예외 처리 및 방어 로직 (Fail-safe)
-* **IP 미입력 에러 방지:** `ew11_host`가 비어있을 경우 무한 연결 시도로 인한 로그 도배를 막기 위해 에러 메시지를 출력하고 무한 대기(Sleep) 상태로 전환해야 합니다.
+* **스레드 세이프(Thread-Safe) 소켓:** Sniffing 쓰레드와 Polling 쓰레드가 동일한 TCP 소켓을 공유하므로, 반드시 **Mutex(Lock)**를 사용하여 패킷 충돌을 막아야 합니다.
+* **Write 직후 Polling 유예 (충돌 방지):** RS485 특성상 제어 명령(Write)을 보낸 직후에는 메인보드가 처리할 시간을 주어야 합니다. 제어 명령 전송 후 **최소 2초 동안은 Active Polling을 중단(Backoff)**해야만 패킷 깨짐을 방지할 수 있습니다.
 * **TCP Reconnect:** EW11 연결이 실패하거나 예기치 않게 끊어지면, 5~10초 간격으로 무한히 재연결을 시도해야 합니다.
-* **버퍼 쓰레기값 필터링:** TCP 소켓 특성상 여러 패킷이 붙어서 오거나 잘려서 올 수 있으므로, 반드시 바이트 버퍼를 쌓아두고 `0x01` 시작점과 CRC-16을 완벽히 검증한 후 파싱해야 합니다.
+* **버퍼 쓰레기값 필터링:** TCP 소켓 특성상 여러 패킷이 붙어서 오거나 잘려서 올 수 있으므로, 반드시 바이트 버퍼를 쌓아두고 시작점과 CRC-16을 완벽히 검증한 후 파싱해야 합니다.
 
 ---
 
