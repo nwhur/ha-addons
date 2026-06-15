@@ -1,5 +1,9 @@
 # Changelog
 
+## [v1.1.2] - 2026-06-16
+### Fixed
+- **Humidity Scaling Hotfix**: Reverted the `/ 10.0` scaling for Indoor and Outdoor Humidity sensors. Humidity values from Modbus are already raw percentages (e.g., 55 = 55%), so dividing them by 10 caused them to display as 5.5%. Temperature sensors still correctly use the `/ 10.0` scaling.
+
 ## [v1.1.1] - 2026-06-16
 ### Fixed
 - **TCP Fragmentation Bug**: Fixed a critical bug in the sniffer loop where fragmented TCP packets would cause the buffer pointer to skip, resulting in lost or ignored Modbus frames. The daemon now correctly waits for full frames.

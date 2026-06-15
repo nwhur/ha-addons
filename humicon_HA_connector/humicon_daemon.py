@@ -376,12 +376,12 @@ def process_frame_04(client, start_addr, byte_count, data_bytes):
         current_state["target_humidity"] = target_humidity
         
     if 13 in reg_map: current_state["ra_temp"] = parse_int16(reg_map[13]) / 10.0
-    if 14 in reg_map: current_state["ra_humidity"] = reg_map[14] / 10.0
+    if 14 in reg_map: current_state["ra_humidity"] = reg_map[14]
     if 16 in reg_map: current_state["co2"] = reg_map[16]
     if 17 in reg_map: current_state["pm10"] = reg_map[17]
     if 18 in reg_map: current_state["pm25"] = reg_map[18]
     if 20 in reg_map: current_state["oa_temp"] = parse_int16(reg_map[20]) / 10.0
-    if 21 in reg_map: current_state["oa_humidity"] = reg_map[21] / 10.0
+    if 21 in reg_map: current_state["oa_humidity"] = reg_map[21]
 
     for k, v in current_state.items():
         if last_state.get(k) != v:
@@ -448,6 +448,7 @@ def sniffer_loop(mqtt_client):
             
             i = 0
             while i < len(buffer) - 4:
+                matched = False
                 # 0x06 Frame: [01] [06]
                 if buffer[i:i+2] == b'\x01\x06':
                     frame_len = 8
@@ -460,9 +461,12 @@ def sniffer_loop(mqtt_client):
                             process_frame_06(mqtt_client, reg_addr, reg_val)
                             i += frame_len
                             continue
+                        # If CRC fails, fall through to i += 1
+                    else:
+                        break # Not enough data, wait for next recv
                 
                 # 0x10 Frame (Write Multiple) from Roomcon
-                if buffer[i:i+2] == b'\x01\x10':
+                elif buffer[i:i+2] == b'\x01\x10':
                     if len(buffer) >= i + 7:
                         byte_count = buffer[i+6]
                         frame_len = 7 + byte_count + 2
@@ -473,16 +477,20 @@ def sniffer_loop(mqtt_client):
                             if crc_calc == crc_recv:
                                 start_addr, count = struct.unpack(">HH", frame[2:6])
                                 logging.info(f"Sniffed Write Multiple (0x10): Start Addr {start_addr}, Count {count}")
-                                # We can process it similarly to 0x03 response data
                                 process_frame_03(mqtt_client, start_addr, byte_count, frame[7:-2])
                                 i += frame_len
                                 continue
+                            # If CRC fails, fall through
+                        else:
+                            break # Wait for more data
+                    else:
+                        break # Wait for byte_count to arrive
 
                 # 0x03 or 0x04 Frame (Request or Response)
-                if buffer[i:i+2] in [b'\x01\x03', b'\x01\x04']:
+                elif buffer[i:i+2] in [b'\x01\x03', b'\x01\x04']:
                     func_code = buffer[i+1]
                     
-                    # Check if it's a Request (8 bytes: 01 0X StartH StartL CountH CountL CRCL CRCH)
+                    # Check if it's a Request (8 bytes)
                     if len(buffer) >= i + 8:
                         frame_req = buffer[i:i+8]
                         if crc16(frame_req[:-2]) == (frame_req[-2] | (frame_req[-1] << 8)):
@@ -493,21 +501,27 @@ def sniffer_loop(mqtt_client):
                             continue
                             
                     # Check if it's a Response (3 + ByteCount + 2)
-                    byte_count = buffer[i+2]
-                    frame_len = 3 + byte_count + 2
-                    if len(buffer) >= i + frame_len:
-                        frame_res = buffer[i:i+frame_len]
-                        crc_calc = crc16(frame_res[:-2])
-                        crc_recv = frame_res[-2] | (frame_res[-1] << 8)
-                        if crc_calc == crc_recv:
-                            if func_code == 3:
-                                process_frame_03(mqtt_client, 0, byte_count, frame_res[3:-2])
-                            elif func_code == 4:
-                                process_frame_04(mqtt_client, 0, byte_count, frame_res[3:-2])
-                            i += frame_len
-                            continue
-                            
-                # No match, advance 1 byte
+                    if len(buffer) >= i + 3:
+                        byte_count = buffer[i+2]
+                        frame_len = 3 + byte_count + 2
+                        if len(buffer) >= i + frame_len:
+                            frame_res = buffer[i:i+frame_len]
+                            crc_calc = crc16(frame_res[:-2])
+                            crc_recv = frame_res[-2] | (frame_res[-1] << 8)
+                            if crc_calc == crc_recv:
+                                if func_code == 3:
+                                    process_frame_03(mqtt_client, 0, byte_count, frame_res[3:-2])
+                                elif func_code == 4:
+                                    process_frame_04(mqtt_client, 0, byte_count, frame_res[3:-2])
+                                i += frame_len
+                                continue
+                            # If CRC fails, fall through
+                        else:
+                            break # Wait for more data
+                    else:
+                        break # Wait for byte_count
+                        
+                # No match or CRC failed, advance 1 byte
                 i += 1
                 
             if i > 0:
