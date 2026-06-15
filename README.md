@@ -15,6 +15,6 @@
 3. 우측 상단의 점 3개 메뉴(⋮)를 누르고 **저장소(Repositories)** 를 선택합니다.
 4. 아래 주소를 복사하여 붙여넣고 **추가(Add)** 를 누릅니다.
    ```text
-   https://github.com/nwhur/humicon-ha-addons
+   https://github.com/nwhur/ha-addons
    ```
 5. 스토어 목록을 새로고침하면 `Humicon HA Connector` 애드온을 확인하고 설치할 수 있습니다!
