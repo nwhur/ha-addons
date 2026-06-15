@@ -1,7 +1,7 @@
-name: "Humicon MQTT Daemon"
-description: "High-speed smart polling MQTT daemon for Humicon"
-version: "1.0.0"
-slug: "humicon_mqtt_daemon"
+name: "Humicon HA Connector"
+description: "Smart HA integration for Humicon via EW11 (Modbus RS485)"
+version: "1.1.0"
+slug: "humicon_ha_connector"
 init: false
 arch:
   - aarch64
@@ -16,6 +16,7 @@ options:
   mqtt_port: 1883
   mqtt_user: "mqtt"
   mqtt_password: ""
+  language: "ko"
 schema:
   ew11_host: str
   ew11_port: int
@@ -23,3 +24,4 @@ schema:
   mqtt_port: int
   mqtt_user: str
   mqtt_password: password
+  language: list(ko|en)

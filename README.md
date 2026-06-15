@@ -4,9 +4,9 @@
 
 ## 제공되는 애드온 (Available Add-ons)
 
-### [Humicon MQTT Daemon](./humicon_mqtt_daemon)
-휴미컨 통합제어기와 Elfin EW11(RS485 to Wi-Fi)을 연동하여, 모드버스(Modbus) 패킷을 고속으로 가로채고(Sniffing) 스마트하게 폴링(Polling)하는 하이브리드 MQTT 데몬입니다.
-휴미컨의 모든 센서 데이터(온습도, CO2, 미세먼지)와 제어 기능(목표 습도, 프리셋 모드, 켜짐/꺼짐)을 홈어시스턴트에 완벽하게 연동해 줍니다.
+### [Humicon HA Connector](./humicon_HA_connector)
+휴미컨 통합제어기와 Elfin EW11(RS485 to Wi-Fi)을 연동하여, 모드버스(Modbus) 패킷을 고속으로 가로채고(Sniffing) 스마트하게 폴링(Polling)하는 하이브리드 커넥터(데몬)입니다.
+휴미컨의 모든 센서 데이터(온습도, CO2, 미세먼지)와 제어 기능(목표 습도, 프리셋 모드, 켜짐/꺼짐)을 홈어시스턴트에 완벽하게 연동해 줍니다. 다국어(Language) 옵션을 통해 영어 인터페이스도 기본 지원합니다.
 
 ## 저장소 추가 방법 (How to add this repository)
 
@@ -17,4 +17,4 @@
    ```text
    https://github.com/nwhur/humicon-ha-addons
    ```
-5. 스토어 목록을 새로고침하면 `Humicon MQTT Daemon` 애드온을 확인하고 설치할 수 있습니다!
+5. 스토어 목록을 새로고침하면 `Humicon HA Connector` 애드온을 확인하고 설치할 수 있습니다!

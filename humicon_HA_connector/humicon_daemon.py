@@ -25,7 +25,33 @@ MQTT_USER = options.get("mqtt_user", "mqtt")
 MQTT_PASS = options.get("mqtt_password", "")
 
 EW11_IP = options.get("ew11_host", "")
+
 EW11_PORT = options.get("ew11_port", 8899)
+LANGUAGE = options.get("language", "ko")
+
+TRANSLATIONS = {
+    "스마트": "Smart", "제습 자동": "Dehumidify Auto", "제습 수동": "Dehumidify Manual",
+    "환기 자동": "Ventilate Auto", "환기 수동": "Ventilate Manual", "바이패스": "Bypass",
+    "청정 자동": "Purify Auto", "청정 수동": "Purify Manual", "꺼짐": "Off",
+    "자동": "Auto", "약풍": "Low", "중풍": "Medium", "강풍": "High",
+    "에코": "Eco", "쾌적": "Comfort", "건조": "Dry",
+    "휴미컨 통합 제어기": "Humicon Controller",
+    "휴미컨 실내 온도": "Indoor Temp", "휴미컨 실내 습도": "Indoor Humidity",
+    "휴미컨 외부 온도": "Outdoor Temp", "휴미컨 외부 습도": "Outdoor Humidity",
+    "휴미컨 실내 CO2": "Indoor CO2", "휴미컨 실내 미세먼지(PM10)": "Indoor PM10",
+    "휴미컨 실내 초미세먼지(PM2.5)": "Indoor PM2.5",
+    "휴미컨 작동 모드": "Humicon Operation Mode", "휴미컨 RC 잠금": "Humicon RC Lock",
+    "휴미컨 목표 습도": "Humicon Target Humidity", "휴미컨 풍량": "Humicon Fan Speed",
+    "대기 중": "Standby"
+}
+REVERSE_T = {v: k for k, v in TRANSLATIONS.items()}
+
+def t(text):
+    return TRANSLATIONS.get(text, text) if LANGUAGE == "en" else text
+
+def from_t(text):
+    return REVERSE_T.get(text, text)
+
 
 if not EW11_IP:
     logging.error("CRITICAL: ew11_host is not configured! Please configure the Add-on in Home Assistant.")
@@ -34,7 +60,7 @@ if not EW11_IP:
 
 MODE_MAP = {
     1: "스마트", 2: "제습 자동", 3: "제습 수동",
-    4: "환기 자동", 5: "환기 수동", 6: "환기 수동(bypass)",
+    4: "환기 자동", 5: "환기 수동", 6: "바이패스",
     7: "청정 자동", 8: "청정 수동"
 }
 REV_MODE_MAP = {v: k for k, v in MODE_MAP.items()}
@@ -130,7 +156,7 @@ def on_message(client, userdata, msg):
                         break
                 client.publish("humicon/state/power", "ON", retain=True)
                 last_state["power"] = "ON"
-            client.publish("humicon/state/mode", mode, retain=True)
+            client.publish("humicon/state/mode", t(mode), retain=True)
             last_state["mode"] = mode
             
         elif topic == "humicon/cmd/fan":
@@ -197,13 +223,13 @@ def setup_discovery(client):
     }
     
     fan_config = {
-        "name": "휴미컨 통합 제어기",
+        "name": t("휴미컨 통합 제어기"),
         "unique_id": "humicon_unified_fan_mqtt",
         "command_topic": "humicon/cmd/power",
         "state_topic": "humicon/state/power",
         "preset_mode_command_topic": "humicon/cmd/mode",
         "preset_mode_state_topic": "humicon/state/mode",
-        "preset_modes": ["꺼짐"] + list(MODE_MAP.values()),
+        "preset_modes": [t("꺼짐")] + [t(m) for m in MODE_MAP.values()],
         "percentage_command_topic": "humicon/cmd/fan",
         "percentage_state_topic": "humicon/state/fan_percentage",
         "speed_range_min": 1,
@@ -224,7 +250,7 @@ def setup_discovery(client):
     ]
     for sid, name, dev_cls, unit in sensors:
         conf = {
-            "name": name,
+            "name": t(name),
             "unique_id": f"humicon_{sid}_mqtt",
             "state_topic": f"humicon/state/{sid}",
             "availability_topic": "humicon/state/availability",
@@ -235,7 +261,7 @@ def setup_discovery(client):
         client.publish(f"homeassistant/sensor/humicon/{sid}/config", json.dumps(conf), retain=True)
 
     mode_sensor_conf = {
-        "name": "휴미컨 작동 모드",
+        "name": t("휴미컨 작동 모드"),
         "unique_id": "humicon_mode_sensor_mqtt",
         "state_topic": "humicon/state/mode",
         "icon": "mdi:refresh-auto",
@@ -245,7 +271,7 @@ def setup_discovery(client):
     client.publish("homeassistant/sensor/humicon/mode/config", json.dumps(mode_sensor_conf), retain=True)
 
     rc_lock_conf = {
-        "name": "휴미컨 RC 잠금",
+        "name": t("휴미컨 RC 잠금"),
         "unique_id": "humicon_rc_lock_mqtt",
         "command_topic": "humicon/cmd/rc_lock",
         "state_topic": "humicon/state/rc_lock",
@@ -256,11 +282,11 @@ def setup_discovery(client):
 
     # Target Humidity
     target_hum_conf = {
-        "name": "휴미컨 목표 습도",
+        "name": t("휴미컨 목표 습도"),
         "unique_id": "humicon_target_humidity_mqtt",
         "command_topic": "humicon/cmd/target_humidity",
         "state_topic": "humicon/state/target_humidity",
-        "options": ["에코", "쾌적", "건조"] + [f"{i}%" for i in range(30, 65, 5)],
+        "options": [t("에코"), t("쾌적"), t("건조")] + [f"{i}%" for i in range(30, 65, 5)],
         "icon": "mdi:water-percent",
         "availability_topic": "humicon/state/availability",
         "device": device_info
@@ -268,11 +294,11 @@ def setup_discovery(client):
     client.publish("homeassistant/select/humicon/target_humidity/config", json.dumps(target_hum_conf), retain=True)
 
     fan_speed_conf = {
-        "name": "휴미컨 풍량",
+        "name": t("휴미컨 풍량"),
         "unique_id": "humicon_fan_speed_mqtt",
         "command_topic": "humicon/cmd/fan_speed",
         "state_topic": "humicon/state/fan_speed_text",
-        "options": ["꺼짐", "자동", "약풍", "중풍", "강풍"],
+        "options": [t(o) for o in ["꺼짐", "자동", "약풍", "중풍", "강풍"]],
         "icon": "mdi:fan",
         "availability_topic": "humicon/state/availability",
         "device": device_info
@@ -368,12 +394,12 @@ def process_frame_06(client, reg_addr, reg_val):
             client.publish("humicon/state/power", power, retain=True)
             last_state["power"] = power
             if power == "OFF":
-                client.publish("humicon/state/mode", "꺼짐", retain=True)
+                client.publish("humicon/state/mode", t("꺼짐"), retain=True)
                 last_state["mode"] = "꺼짐"
     elif reg_addr == 2:
         mode = MODE_MAP.get(reg_val, "스마트")
         if last_state.get("power") == "ON" and last_state.get("mode") != mode:
-            client.publish("humicon/state/mode", mode, retain=True)
+            client.publish("humicon/state/mode", t(mode), retain=True)
             last_state["mode"] = mode
     elif reg_addr == 5:
         if reg_val == 1: pct_str = "1"; text = "약풍"
