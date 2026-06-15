@@ -76,18 +76,21 @@ Python 구현 시 다음 알고리즘을 준수해야 합니다.
 ## 4. 홈어시스턴트(HA) 연동 명세 (MQTT Discovery)
 데몬은 시작 시 `homeassistant/#` 토픽을 통해 기기를 자동 등록(Auto-Discovery)해야 합니다.
 
-### 4.1. 생성되어야 할 엔티티(Entity) 목록
-| 종류 | Entity ID (예상) | 이름 (번역 지원) | 역할 |
-| :--- | :--- | :--- | :--- |
-| **Fan** | `fan.humicon_unified_fan` | 휴미컨 통합 제어기 | 전원 On/Off, preset_mode(스마트, 제습 등), percentage(1~3: 약/중/강풍, 4: 자동) 제어 |
-| **Select** | `select.humicon_target_humidity` | 휴미컨 목표 습도 | 습도 30~60% 및 에코/쾌적/건조 프리셋 선택 |
-| **Sensor** | `sensor.humicon_operation_mode` | 휴미컨 작동 모드 | 현재 어떤 모드로 구동 중인지 텍스트 표시 |
-| **Sensor** | `sensor.humicon_indoor_temp` | 휴미컨 실내 온도 | 온도 (°C) - `device_class: temperature` |
-| **Sensor** | `sensor.humicon_indoor_humidity`| 휴미컨 실내 습도 | 습도 (%) - `device_class: humidity` |
-| **Sensor** | `sensor.humicon_co2` | 휴미컨 실내 CO2 | 이산화탄소 농도 (ppm) |
-| **Sensor** | `sensor.humicon_pm10` | 휴미컨 실내 미세먼지 | 미세먼지 (µg/m³) |
-| **Sensor** | `sensor.humicon_pm25` | 휴미컨 초미세먼지 | 초미세먼지 (µg/m³) |
-| **Switch** | `switch.humicon_rc_lock` | 휴미컨 RC 잠금 | 룸콘 물리 버튼 조작 잠금 기능 |
+### 4.1. 생성되어야 할 엔티티(Entity) 세부 설정 명세
+다른 AI가 HA UI를 똑같이 렌더링하기 위해서는 아래의 엔티티 속성(options, icon 등)을 정확히 MQTT Discovery Payload에 포함해야 합니다.
+
+| 종류 | Entity ID (예상) | 엔티티 이름 | 아이콘 (Icon) | 속성 및 제어 옵션 (Options) |
+| :--- | :--- | :--- | :--- | :--- |
+| **Fan** | `fan.humicon_unified_fan` | 휴미컨 통합 제어기 | 기본값 | `preset_modes`: `["꺼짐", "스마트", "제습 자동", "제습 수동", "환기 자동", "환기 수동", "바이패스", "청정 자동", "청정 수동"]`<br>`speed_range_min`: 1, `speed_range_max`: 3 |
+| **Select** | `select.humicon_target_humidity` | 휴미컨 목표 습도 | `mdi:water-percent` | `options`: `["에코", "쾌적", "건조", "30%", "35%", "40%", "45%", "50%", "55%", "60%"]` (정확히 5% 단위) |
+| **Select** | `select.humicon_fan_speed` | 휴미컨 풍량 | `mdi:fan` | `options`: `["꺼짐", "자동", "약풍", "중풍", "강풍"]` |
+| **Sensor** | `sensor.humicon_operation_mode` | 휴미컨 작동 모드 | `mdi:refresh-auto` | 현재 모드 텍스트 출력 |
+| **Sensor** | `sensor.humicon_indoor_temp` | 휴미컨 실내 온도 | 기본값 | `device_class: temperature`, `unit_of_measurement: °C` |
+| **Sensor** | `sensor.humicon_indoor_humidity`| 휴미컨 실내 습도 | 기본값 | `device_class: humidity`, `unit_of_measurement: %` |
+| **Sensor** | `sensor.humicon_co2` | 휴미컨 실내 CO2 | 기본값 | `device_class: carbon_dioxide`, `unit_of_measurement: ppm` |
+| **Sensor** | `sensor.humicon_pm10` | 휴미컨 실내 미세먼지 | 기본값 | `device_class: pm10`, `unit_of_measurement: µg/m³` |
+| **Sensor** | `sensor.humicon_pm25` | 휴미컨 초미세먼지 | 기본값 | `device_class: pm25`, `unit_of_measurement: µg/m³` |
+| **Switch** | `switch.humicon_rc_lock` | 휴미컨 RC 잠금 | 기본값 | `payload_on`: "ON", `payload_off`: "OFF" |
 
 ### 4.2. High Availability (가용성 관리)
 - 모든 엔티티는 `availability_topic` (`humicon/status`)을 가져야 합니다.
