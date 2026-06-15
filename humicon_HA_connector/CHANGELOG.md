@@ -1,5 +1,15 @@
 # Changelog
 
+## [v1.1.1] - 2026-06-16
+### Fixed
+- **TCP Fragmentation Bug**: Fixed a critical bug in the sniffer loop where fragmented TCP packets would cause the buffer pointer to skip, resulting in lost or ignored Modbus frames. The daemon now correctly waits for full frames.
+- **Sensor Scaling Bug**: Fixed an issue where Indoor/Outdoor Temperature and Humidity sensor values were displayed exactly as raw Modbus integers (e.g., 239 °C) instead of properly dividing by 10.0 (e.g., 23.9 °C).
+- **i18n Translation Bug**: Fixed an issue where commands sent from Home Assistant while the `language` was set to `en` were ignored because the daemon did not reverse-translate English payloads back to Korean before processing.
+- **Icon Transparency**: Fixed the add-on icon to have a transparent background instead of white corners.
+
+### Added
+- **Requirements Specification**: Added `REQUIREMENTS_SPECIFICATION.md` to the repository, containing the full system architecture, Modbus payloads, and HA entity configuration details.
+
 ## [v1.1.0] - 2026-06-15
 ### Changed
 - **Renamed Add-on**: The add-on has been officially renamed from `Humicon MQTT Daemon` to **Humicon HA Connector** for better user intuitiveness.

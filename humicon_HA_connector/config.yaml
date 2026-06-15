@@ -1,6 +1,6 @@
 name: "Humicon HA Connector"
 description: "Smart HA integration for Humicon via EW11 (Modbus RS485)"
-version: "1.1.0"
+version: "1.1.1"
 slug: "humicon_ha_connector"
 init: false
 arch:
