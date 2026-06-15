@@ -142,7 +142,8 @@ def on_message(client, userdata, msg):
             last_state["power"] = val
             
         elif topic == "humicon/cmd/mode":
-            mode = payload.decode('utf-8') if isinstance(payload, bytes) else payload
+            raw_mode = payload.decode('utf-8') if isinstance(payload, bytes) else payload
+            mode = from_t(raw_mode) if LANGUAGE == "en" else raw_mode
             if mode == "꺼짐":
                 send_modbus_write(1, 0)
                 client.publish("humicon/state/power", "OFF", retain=True)
@@ -177,7 +178,8 @@ def on_message(client, userdata, msg):
             last_state["fan_percentage"] = pct_str
         
         elif topic == "humicon/cmd/fan_speed":
-            text = payload.decode('utf-8') if isinstance(payload, bytes) else payload
+            raw_text = payload.decode('utf-8') if isinstance(payload, bytes) else payload
+            text = from_t(raw_text) if LANGUAGE == "en" else raw_text
             if text == "꺼짐": val = 0
             elif text == "자동": val = 4
             elif text == "약풍": val = 1
@@ -185,11 +187,12 @@ def on_message(client, userdata, msg):
             elif text == "강풍": val = 3
             else: val = 1
             send_modbus_write(5, val)
-            client.publish("humicon/state/fan_speed_text", text, retain=True)
-            last_state["fan_speed_text"] = text
+            client.publish("humicon/state/fan_speed_text", t(text), retain=True)
+            last_state["fan_speed_text"] = t(text)
             
         elif topic == "humicon/cmd/target_humidity":
-            payload_str = payload.decode('utf-8') if isinstance(payload, bytes) else payload
+            raw_payload_str = payload.decode('utf-8') if isinstance(payload, bytes) else payload
+            payload_str = from_t(raw_payload_str) if LANGUAGE == "en" else raw_payload_str
             if payload_str == "에코":
                 send_modbus_write(3, 0)
             elif payload_str == "쾌적":
@@ -201,8 +204,8 @@ def on_message(client, userdata, msg):
                 send_modbus_write(3, 3) # Set mode to Custom
                 time.sleep(0.3)
                 send_modbus_write(4, pct) # Set custom percentage
-            client.publish("humicon/state/target_humidity", payload_str, retain=True)
-            last_state["target_humidity"] = payload_str
+            client.publish("humicon/state/target_humidity", t(payload_str), retain=True)
+            last_state["target_humidity"] = t(payload_str)
             
         elif topic == "humicon/cmd/rc_lock":
             val = 1 if payload == b"ON" else 0

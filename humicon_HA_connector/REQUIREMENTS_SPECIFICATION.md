@@ -98,6 +98,8 @@ Python 구현 시 다음 알고리즘을 준수해야 합니다.
 - **Command Topic:** `humicon/cmd/[기능명]` (예: power, mode, fan, target_humidity, rc_lock 등)
 - **State Topic:** `humicon/state/[기능명]`
 - 모든 엔티티의 **Availability Topic:** `humicon/state/availability` (연결 시 `online`, 끊김 시 `offline` 발행)
+- **상태 중복 제거(State Caching):** 파이썬 메모리 딕셔너리(`last_state`)에 마지막으로 발행한 상태값을 저장해두고, **실제 상태가 변경되었을 때만 MQTT에 발행**해야 합니다. (이벤트 버스 스팸 방지)
+- **Retain 플래그 필수:** 모든 `State Topic`과 `Availability Topic`을 발행할 때는 반드시 **`retain=True`** 플래그를 설정하여, HA가 재시작되어도 이전 상태를 즉각 복구할 수 있도록 해야 합니다.
 - 이를 통해 네트워크 단절 시 HA 대시보드에서 기기가 "사용 불가" 처리되어 오작동을 방지해야 합니다.
 
 ---
@@ -119,6 +121,9 @@ HA Supervisor 호환 애드온으로 구동하기 위한 명세입니다.
 
 ## 6. 다국어 지원 명세 (i18n)
 언어 설정(`language` 옵션)에 따라 HA에 등록되는 **엔티티 이름, 모드 이름, 상태 텍스트**가 동적으로 번역되어야 합니다. 단, 고유 식별자(`unique_id`)와 MQTT 토픽은 언어 변경 시 HA 엔티티가 꼬이지 않도록 영문 고정이어야 합니다.
+
+**양방향(Bidirectional) 번역 필수:**
+HA UI에 번역된 텍스트(`Smart`, `Dehumidify Auto` 등)를 뿌려주면, 사용자가 그 버튼을 눌렀을 때 HA는 데몬에게 **번역된 영문 텍스트 그대로(`Smart`)** 명령을 보냅니다. 따라서 데몬의 `on_message` 로직은 들어온 영문 페이로드를 다시 원래의 **한국어 키값(`스마트`)으로 역번역(Reverse Translate)** 한 뒤에 파싱 로직을 수행해야 합니다.
 
 **필수 번역 매핑 테이블:**
 * 스마트 ➔ `Smart`
