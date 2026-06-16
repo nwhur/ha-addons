@@ -1,5 +1,9 @@
 # Changelog
 
+## [v1.1.4] - 2026-06-16
+### Fixed
+- **MQTT LWT (Last Will and Testament)**: Added MQTT Last Will. If the add-on is uninstalled, stops, or crashes without providing new info, the broker will automatically mark all entities as `Unavailable` instead of displaying stale retained values (like the bugged 5.5%).
+
 ## [v1.1.3] - 2026-06-16
 ### Fixed
 - **Temperature Scaling Hotfix**: Reverted the `/ 10.0` scaling for Indoor and Outdoor Temperature sensors. Similar to humidity, the Humicon Modbus actually sends temperature as a raw integer (e.g., 28 = 28°C), not scaled by 10. This fixes the issue where 28°C was displaying as 2.8°C.

@@ -580,6 +580,9 @@ def main():
     client.on_connect = on_connect
     client.on_message = on_message
 
+    # LWT (Last Will and Testament)
+    client.will_set("humicon/state/availability", "offline", retain=True)
+
     logging.info("Starting Humicon Hybrid Daemon...")
     client.connect(MQTT_BROKER, MQTT_PORT, 60)
     
