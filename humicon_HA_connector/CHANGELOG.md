@@ -1,5 +1,9 @@
 # Changelog
 
+## [v1.1.3] - 2026-06-16
+### Fixed
+- **Temperature Scaling Hotfix**: Reverted the `/ 10.0` scaling for Indoor and Outdoor Temperature sensors. Similar to humidity, the Humicon Modbus actually sends temperature as a raw integer (e.g., 28 = 28°C), not scaled by 10. This fixes the issue where 28°C was displaying as 2.8°C.
+
 ## [v1.1.2] - 2026-06-16
 ### Fixed
 - **Humidity Scaling Hotfix**: Reverted the `/ 10.0` scaling for Indoor and Outdoor Humidity sensors. Humidity values from Modbus are already raw percentages (e.g., 55 = 55%), so dividing them by 10 caused them to display as 5.5%. Temperature sensors still correctly use the `/ 10.0` scaling.

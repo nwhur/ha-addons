@@ -375,12 +375,12 @@ def process_frame_04(client, start_addr, byte_count, data_bytes):
         else: target_humidity = f"{hum_val}%"
         current_state["target_humidity"] = target_humidity
         
-    if 13 in reg_map: current_state["ra_temp"] = parse_int16(reg_map[13]) / 10.0
+    if 13 in reg_map: current_state["ra_temp"] = parse_int16(reg_map[13])
     if 14 in reg_map: current_state["ra_humidity"] = reg_map[14]
     if 16 in reg_map: current_state["co2"] = reg_map[16]
     if 17 in reg_map: current_state["pm10"] = reg_map[17]
     if 18 in reg_map: current_state["pm25"] = reg_map[18]
-    if 20 in reg_map: current_state["oa_temp"] = parse_int16(reg_map[20]) / 10.0
+    if 20 in reg_map: current_state["oa_temp"] = parse_int16(reg_map[20])
     if 21 in reg_map: current_state["oa_humidity"] = reg_map[21]
 
     for k, v in current_state.items():
